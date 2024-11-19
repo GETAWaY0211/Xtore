@@ -1,7 +1,7 @@
 from xtore.BaseType cimport i32, i64
-from xtore.Buffer cimport Buffer, setBuffer, getBuffer, initBuffer, releaseBuffer
-from xtore.StreamIOHandler cimport StreamIOHandler
-from xtore.Page cimport Page
+from xtore.common.Buffer cimport Buffer, setBuffer, getBuffer, initBuffer, releaseBuffer
+from xtore.common.StreamIOHandler cimport StreamIOHandler
+from xtore.instance.Page cimport Page
 from libc.stdlib cimport malloc
 from posix.strings cimport bzero
 
@@ -23,6 +23,17 @@ cdef class LinkedPage (Page):
 	def __dealloc__(self):
 		releaseBuffer(&self.stream)
 	
+	def __repr__(self) -> str:
+		return f'<LinkedPage {self.position} n={self.next} p={self.previous} ps={self.pageSize} is={self.itemSize} t={self.tail} n={self.n}>'
+
+	cdef copyHeader(self, Page otherPage):
+		cdef LinkedPage other = <LinkedPage> otherPage
+		self.position = other.position
+		self.next = other.next
+		self.previous = other.previous
+		self.tail = other.tail
+		self.n = other.n
+
 	cdef reset(self):
 		bzero(self.stream.buffer, self.pageSize)
 		self.tail = self.headerSize
@@ -34,6 +45,17 @@ cdef class LinkedPage (Page):
 		self.position = position
 		self.io.seek(self.position)
 		self.io.read(&self.stream, self.pageSize)
+		self.readHeaderBuffer()
+		self.hasBody = True
+	
+	cdef readHeader(self, i64 position):
+		self.position = position
+		self.io.seek(self.position)
+		self.io.read(&self.stream, LINKED_PAGE_HEADER_SIZE)
+		self.readHeaderBuffer()
+		self.hasBody = False
+		
+	cdef readHeaderBuffer(self):
 		self.stream.position = 0
 		self.next = (<i64 *> getBuffer(&self.stream, 8))[0]
 		self.previous = (<i64 *> getBuffer(&self.stream, 8))[0]

@@ -1,7 +1,7 @@
 from xtore.BaseType cimport i32, i64
-from xtore.Page cimport Page
-from xtore.LinkedPage cimport LinkedPage
-from xtore.HashPageNode cimport HashPageNode
+from xtore.instance.Page cimport Page
+from xtore.instance.LinkedPage cimport LinkedPage
+from xtore.instance.HashPageNode cimport HashPageNode
 
 from libc.stdlib cimport malloc, free
 
@@ -32,6 +32,9 @@ cdef class DoubleLayerRangeResult:
 			free(self.lowerPosition)
 			self.lowerPosition = NULL
 
+	def __repr__(self) -> str:
+		return f'<DoubleLayerRangeResult {self.startPosition} {self.startIndex} {self.startSubIndex} {self.endPosition} {self.endIndex} {self.endSubIndex}>'
+
 	cdef start(self):
 		self.currentPosition = self.startPosition
 		self.currentIndex = self.startIndex
@@ -44,20 +47,22 @@ cdef class DoubleLayerRangeResult:
 	cdef bint getNext(self, HashPageNode entry):
 		cdef i32 offset
 		cdef i64 lowerPosition
-		cdef bint result = self.currentPosition <= self.endPosition
-		result = result & (self.currentIndex <= self.endIndex)
-		result = result & (self.currentSubIndex <= self.endSubIndex)
-		if not result: return False
+		cdef bint result = self.currentPosition >= self.endPosition
+		result = result & (self.currentIndex >= self.endIndex)
+		result = result & (self.currentSubIndex >= self.endSubIndex)
+		if result:
+			return False
 		if self.currentSubIndex < self.lower.n:
 			offset = self.lowerPosition[self.currentSubIndex]
 			self.currentSubIndex += 1
 		else:
 			if self.currentIndex < self.upper.n:
+				self.currentIndex += 1
 				lowerPosition = self.getLowerPosition(self.currentIndex)
 				self.lower.read(lowerPosition)
-				self.currentIndex += 1
 			else:
-				if self.upper.next < 0: return False
+				if self.upper.next < 0:
+					return False
 				self.currentPosition = self.upper.next
 				self.upper.read(self.upper.next)
 				lowerPosition = self.getLowerPosition(self.currentIndex)

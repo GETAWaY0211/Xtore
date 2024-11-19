@@ -1,6 +1,6 @@
 from xtore.BaseType cimport i32, i64
-from xtore.Buffer cimport Buffer, setBuffer, getBuffer, initBuffer, releaseBuffer
-from xtore.StreamIOHandler cimport StreamIOHandler
+from xtore.common.Buffer cimport Buffer, setBuffer, getBuffer, initBuffer, releaseBuffer
+from xtore.common.StreamIOHandler cimport StreamIOHandler
 from libc.string cimport memcpy
 from libc.stdlib cimport malloc
 from posix.strings cimport bzero
@@ -21,6 +21,9 @@ cdef class Page:
 	def __dealloc__(self):
 		releaseBuffer(&self.stream)
 	
+	def __repr__(self) -> str:
+		return f'<Page {self.position} ps={self.pageSize} is={self.itemSize} t={self.tail} n={self.n}>'
+	
 	cdef reset(self):
 		bzero(self.stream.buffer, self.pageSize)
 		self.tail = self.headerSize
@@ -34,6 +37,11 @@ cdef class Page:
 		self.io.fill(&self.stream)
 		self.stream.position = self.headerSize
 		return self.position
+	
+	cdef copyHeader(self, Page other):
+		self.position = other.position
+		self.tail = other.tail
+		self.n = other.n
 
 	cdef i32 getCapacity(self):
 		return self.pageSize - self.tail
@@ -43,14 +51,18 @@ cdef class Page:
 		cdef i32 capacity = self.pageSize-self.tail
 		cdef i32 size
 		if capacity >= stream.position:
-			size = stream.position + 4
-			setBuffer(&self.stream, <char *> &stream.position, 4)
-			setBuffer(&self.stream, stream.buffer, stream.position)
-			self.io.seek(self.position+self.tail)
-			self.io.writeOffset(&self.stream, self.tail, size)
+			if self.hasBody:
+				size = stream.position + 4
+				setBuffer(&self.stream, <char *> &stream.position, 4)
+				setBuffer(&self.stream, stream.buffer, stream.position)
+				self.io.seek(self.position+self.tail)
+				self.io.writeOffset(&self.stream, self.tail, size)
+			else:
+				self.io.seek(self.position+self.tail)
+				self.io.write(stream)
 			self.tail += size
-			self.writeHeader()
 			self.n += 1
+			self.writeHeader()
 			return True
 		else:
 			return False
@@ -58,12 +70,21 @@ cdef class Page:
 	cdef bint appendValue(self, char *value):
 		if self.itemSize <= 0: return False
 		cdef i32 capacity = self.pageSize-self.tail
+		cdef Buffer stream
 		if capacity >= self.itemSize:
-			memcpy(self.stream.buffer+self.tail, value, self.pageSize)
-			self.io.writeOffset(&self.stream, self.tail, self.pageSize)
-			self.tail += self.pageSize
-			self.writeHeader()
+			if self.hasBody:
+				memcpy(self.stream.buffer+self.tail, value, self.itemSize)
+				self.io.seek(self.position+self.tail)
+				self.io.writeOffset(&self.stream, self.tail, self.itemSize)
+			else:
+				stream.buffer = value
+				stream.position = self.itemSize
+				stream.capacity = self.itemSize
+				self.io.seek(self.position+self.tail)
+				self.io.write(&stream)
+			self.tail += self.itemSize
 			self.n += 1
+			self.writeHeader()
 			return True
 		else:
 			return False
@@ -72,8 +93,9 @@ cdef class Page:
 		if self.itemSize <= 0: return False
 		cdef i32 position = self.headerSize + self.itemSize*index
 		if position <= self.pageSize:
-			memcpy(self.stream.buffer+position, value, self.pageSize)
-			self.io.writeOffset(&self.stream, position, self.pageSize)
+			memcpy(self.stream.buffer+position, value, self.itemSize)
+			self.io.seek(self.position+position)
+			self.io.writeOffset(&self.stream, position, self.itemSize)
 			self.writeHeader()
 			return True
 		else:
@@ -83,6 +105,17 @@ cdef class Page:
 		self.position = position
 		self.io.seek(self.position)
 		self.io.read(&self.stream, self.pageSize)
+		self.readHeaderBuffer()
+		self.hasBody = True
+	
+	cdef readHeader(self, i64 position):
+		self.position = position
+		self.io.seek(self.position)
+		self.io.read(&self.stream, PAGE_HEADER_SIZE)
+		self.readHeaderBuffer()
+		self.hasBody = False
+		
+	cdef readHeaderBuffer(self):
 		self.stream.position = 0
 		self.tail = (<i32 *> getBuffer(&self.stream, 4))[0]
 		self.n = (<i32 *> getBuffer(&self.stream, 4))[0]
