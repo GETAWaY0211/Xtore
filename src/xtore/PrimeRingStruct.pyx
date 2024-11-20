@@ -3,11 +3,11 @@ cdef class StorageUnit:
         self.key = key
         self.node_id = node_id
         self.replica_id = replica_id
-
+   
 cdef class RingNode:
     def __init__(self, int node_id, object node_child = NULL, StorageUnit* storage_unit):
         self.node_id = node_id
-        self.child_ring = child_ring
+        self.node_child = node_child
         self.storage_unit = storage_unit
 
 cdef class RingLayer:
@@ -20,7 +20,7 @@ cdef class RingLayer:
 
     def add_node(self, int node_id, object node_chile = NULL, StorageUnit* storage_unit = NULL):
         if 0 <= node_id < self.prime_number:
-            self.nodes[node_id] = RingNode(node_id, child_ring, storage_unit)
+            self.nodes[node_id] = RingNode(node_id, node_child, storage_unit)
         else:
             print("failed")
 
