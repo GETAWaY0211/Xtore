@@ -1,22 +1,21 @@
+from libc.stdint cimport int64_t
+from xtore.BaseType cimport i32, i64
+
 cdef class StorageUnit:
     cdef str key
     cdef str subnode_id
-    #cdef int replica_id
-
-cdef class RingNode:
-    cdef int node_id
-    cdef object node_child
-    cdef StorageUnit* storage_unit
+    cdef int replica_id
 
 cdef class RingLayer:
     cdef int layer_id
     cdef int prime_number
-    cdef RingNode** nodes
-    def add_node(self, int node_id, object node_chile, StorageUnit* storage_unit)
+    cdef list nodes
+    def add_node(self, StorageUnit node)
+    def is_fulled(self)
 
 cdef class PrimeRing:
-    cdef int total_layers
-    cdef RingLayer** layers
-    cdef int total_nodes
-    def add_layer(self, int layer_id, int prime_number)
+    cdef list layers             
+    cdef list prime_numbers 
+    def add_layer(self)
+    def add_node(self, StorageUnit node)
 

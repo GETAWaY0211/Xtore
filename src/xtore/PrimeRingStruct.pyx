@@ -1,40 +1,52 @@
 cdef class StorageUnit:
-    def __init__(self, str key = NULL, str subnode_id, int replica_id = 0):
+    def __init__(self, str key, str node_id, int replica_id=0):
         self.key = key
         self.node_id = node_id
         self.replica_id = replica_id
-   
-cdef class RingNode:
-    def __init__(self, int node_id, object node_child = NULL, StorageUnit* storage_unit):
-        self.node_id = node_id
-        self.node_child = node_child
-        self.storage_unit = storage_unit
 
 cdef class RingLayer:
     def __init__(self, int layer_id, int prime_number):
         self.layer_id = layer_id
         self.prime_number = prime_number
-        self.nodes = <RingNode**>malloc(self.prime_number * sizeof(RingNode*))
-        for i in range(self.prime_number):
-            self.nodes[i] = NULL
+        self.nodes = []
 
-    def add_node(self, int node_id, object node_chile = NULL, StorageUnit* storage_unit = NULL):
-        if 0 <= node_id < self.prime_number:
-            self.nodes[node_id] = RingNode(node_id, node_child, storage_unit)
+    def add_node(self, StorageUnit node):
+        if len(self.nodes) < self.prime_number:
+            self.nodes.append(node)
         else:
-            print("failed")
+            raise ValueError('Layer is fulled')
+
+    def is_full(self):
+        return len(self.nodes) >= self.prime_number
 
 cdef class PrimeRing:
-    def __init__(self, int total_layers):
-        self.total_layers = total_layers
-        self.layers = <RingLayer**>malloc(self.total_layers * sizeof(RingLayer*))
-        self.layers[layer_id] = RingLayer(layer_id, prime_number)
-        for i in range(self.total_layers):
-            self.layers[i] = NULL
-        self.total_nodes = 0
+    def __init__(self, list prime_numbers):
+        self.layers = []
+        self.prime_numbers = prime_numbers
 
-    def add_layer(self, int layer_id, int prime_number):
-        self.total_layer += 1
-        self.layers[layer_id] = RingLayer(layer_id, prime_number)
+        # Initialize the first layer
+        self._add_layer()
 
-    def cal_nodes(self):
+    def _add_layer(self):
+        layer_id = len(self.layers)
+        if layer_id < len(self.prime_numbers):
+            prime_number = self.prime_numbers[layer_id]
+            new_layer = RingLayer(layer_id, prime_number)
+            self.layers.append(new_layer)
+        else:
+            raise ValueError('Reached node')
+
+    def add_node(self, StorageUnit node):
+        for layer in self.layers:
+            if not layer.is_full():
+                layer.add_node(node)
+                return
+
+        self._add_layer()
+        self.layers[-1].add_node(node)
+
+    def __str__(self):
+        result = []
+        for layer in self.layers:
+            result.append(f"Layer {layer.layer_id}: {len(layer.nodes)}/{layer.prime_number} nodes")
+        return "\n".join(result)

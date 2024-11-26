@@ -1,4 +1,15 @@
 #!/usr/bin/env python
+from xtore.PrimeRingStruct import StorageUnit
 
-from xtore.cli.StorageTestCLI import run
-if __name__ == '__main__': run()
+prime_numbers = [3, 5, 7, 11]
+
+prime_ring = PrimeRing(prime_numbers)
+
+prime_ring.add_member(StorageUnit("A"))
+prime_ring.add_member(StorageUnit("B"))
+prime_ring.add_member(StorageUnit("C"))
+prime_ring.add_member(StorageUnit("D"))
+prime_ring.add_member(StorageUnit("E"))
+
+print(prime_ring)
+
