@@ -10,12 +10,14 @@ cdef class RingLayer:
     cdef int layer_id
     cdef int prime_number
     cdef list nodes
-    def add_node(self, StorageUnit node)
-    def is_fulled(self)
-
+    cdef int total_nodes
+    cdef add_node(self, StorageUnit node)
+    cdef is_fulled(self)
+ 
 cdef class PrimeRing:
     cdef list layers             
     cdef list prime_numbers 
-    def add_layer(self)
-    def add_node(self, StorageUnit node)
+    cdef add_layer(self)
+    cdef add_node(self, StorageUnit node)
+    cdef print_str(self)
 
