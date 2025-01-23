@@ -1,6 +1,7 @@
 from xtore.common.ClientHandler cimport ClientHandler
 from xtore.test.Package cimport Package
 from xtore.test.People cimport People
+from xtore.test.Data cimport Data
 from xtore.common.Buffer cimport Buffer, initBuffer, releaseBuffer
 from xtore.BaseType cimport i32, u64
 
@@ -38,7 +39,7 @@ cdef class DBClientCLI:
 		self.parser = argparse.ArgumentParser(description=__help__, formatter_class=RawTextHelpFormatter)
 		self.parser.add_argument("-u", "--host", help="Target Server host.", required=False, type=str, default='127.0.0.1')
 		self.parser.add_argument("-p", "--port", help="Target Server port.", required=True, type=int)
-		self.parser.add_argument("-m", "--message", help="Sending Message.", required=False, type=str)
+		#self.parser.add_argument("-m", "--message", help="Sending Message.", required=False, type=str)
 		self.parser.add_argument("-s", "--method", help="Select Method", required=True, choices=['Get', 'Set'])
 		self.option = self.parser.parse_args(argv)
 
@@ -51,14 +52,14 @@ cdef class DBClientCLI:
 
 	cdef bytes pack(self) :
 		cdef object fake = Faker()
-		cdef Package package = Package()
-		package.position = -1
-		package.ID = random.randint(1_000_000_000_000, 9_999_999_999_999)
-		package.method = self.option.method
-		package.name = self.option.message or fake.first_name()
-		package.surname = fake.last_name()
-		print(package)
-		package.write(&self.stream)
+		cdef Data data = Data()
+		data.position = -1
+		data.ID = random.randint(1_000_000_000_000, 9_999_999_999_999)
+		data.method = self.option.method
+		data.name = self.option.message or fake.first_name()
+		data.surname = fake.last_name()
+		print(data)
+		data.write(&self.stream)
 		return PyBytes_FromStringAndSize(self.stream.buffer, self.stream.position)
 
 	cdef checkPath(self):
