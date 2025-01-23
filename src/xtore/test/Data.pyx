@@ -21,6 +21,7 @@ cdef class Data (RecordNode):
 		self.ID = (<i64*> getBuffer(stream, 8))[0]
 
 	cdef readValue(self, i16 version, Buffer *stream):
+		self.method = getString(stream)
 		cdef int i
 		fieldCount = (<i16 *> getBuffer(stream, 2))[0]
 		for i in range(fieldCount):
@@ -33,6 +34,7 @@ cdef class Data (RecordNode):
 
 	cdef write(self, Buffer *stream):
 		setBuffer(stream, <char *> &self.ID, 8)
+		setString(stream, self.method)
 		cdef i16 fieldCount = len(self.fields)
 		setBuffer(stream, <char *> &fieldCount, 2)
 		cdef i32 start = stream.position
