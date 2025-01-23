@@ -53,8 +53,6 @@ class XtoreSetup :
 			'xt-service',
 			'xt-master',
 			'xt-node',
-			'xt-start-service',
-			'xt-cli'
 		]
 
 		self.configList = [
