@@ -33,7 +33,7 @@ def __conform__(path) :
 def __link__(source, destination):
 	source = __conform__(source)
 	destination = __conform__(destination)
-	command = f"ln -s {source} {destination}"
+	command = f"ln -s -f {source} {destination}"
 	if sys.platform == 'win32': command = f"mklink /D {destination} {source}"
 	print(command)
 	os.system(command)
@@ -53,6 +53,8 @@ class XtoreSetup :
 			'xt-service',
 			'xt-master',
 			'xt-node',
+			'xt-start-service',
+			'xt-cli',
 		]
 
 		self.configList = [
