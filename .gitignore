@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.cpp
 
 # C extensions
 *.so
@@ -32,12 +33,9 @@ pip-delete-this-directory.txt
 # Environments
 .env
 .venv
-venv-2/
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
 *.venv/
-*.venv-master/
-venv-master/
